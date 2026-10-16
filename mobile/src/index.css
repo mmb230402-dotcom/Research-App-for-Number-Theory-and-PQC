@@ -1,0 +1,530 @@
+@import 'tailwindcss';
+@import 'katex/dist/katex.min.css';
+
+/* ===========================================================================
+   Design tokens · "Academic Noir / Cyber-LaTeX"
+   Dark is the default theme; the light theme uses soft slate text on an
+   off-white canvas (never #000 on #fff).
+   =========================================================================== */
+:root {
+  --canvas: #121212;
+  --surface: #1b1b1e;
+  --surface-2: #26262a;
+  --surface-3: #303036;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --ink: #ffffff;
+  --ink-2: #c9c9d1;
+  --ink-3: #8e8e98;
+  --bar: rgba(18, 18, 18, 0.74);
+  --latex: #1a365d;
+  --latex-ink: #90cdf4;
+  --sage: #2f855a;
+  --sage-ink: #68d391;
+  --amber: #7b341e;
+  --amber-ink: #f6ad55;
+  --danger: #e5484d;
+  --code-bg: #0d1117;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px 1px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 6px 2px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 4px 12px 3px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+  --tabbar-h: calc(56px + env(safe-area-inset-bottom));
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, Roboto, 'Segoe UI', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, Roboto, 'Segoe UI', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --canvas: #f2f3f6;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --surface-3: #e2e6ec;
+  --line: rgba(15, 23, 42, 0.09);
+  --line-strong: rgba(15, 23, 42, 0.18);
+  --ink: #1e293b; /* slate-800 */
+  --ink-2: #475569;
+  --ink-3: #64748b;
+  --bar: rgba(248, 249, 251, 0.78);
+  --latex-ink: #1a365d;
+  --sage-ink: #276749;
+  --amber-ink: #7b341e;
+  --code-bg: #f6f8fa;
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.12), 0 1px 3px 1px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 1px 2px rgba(15, 23, 42, 0.14), 0 2px 6px 2px rgba(15, 23, 42, 0.08);
+  --shadow-3: 0 1px 3px rgba(15, 23, 42, 0.14), 0 4px 12px 3px rgba(15, 23, 42, 0.1);
+  color-scheme: light;
+}
+
+:root[data-platform='android'] {
+  --tabbar-h: calc(68px + env(safe-area-inset-bottom));
+  --font-ui: Roboto, 'Google Sans Text', 'Noto Sans', Inter, system-ui, sans-serif;
+  --font-display: 'Google Sans', Roboto, 'Noto Sans', Inter, system-ui, sans-serif;
+}
+
+:root[data-keyboard='open'] {
+  --tabbar-h: 0px;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-bar: var(--bar);
+  --color-latex: var(--latex);
+  --color-latex-ink: var(--latex-ink);
+  --color-sage: var(--sage);
+  --color-sage-ink: var(--sage-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-ui);
+  --font-display: var(--font-display);
+  --font-math: KaTeX_Main, 'Latin Modern Roman', 'Computer Modern Serif', Georgia, serif;
+  --shadow-e1: var(--shadow-1);
+  --shadow-e2: var(--shadow-2);
+  --shadow-e3: var(--shadow-3);
+}
+
+/* ===========================================================================
+   App shell: the document never scrolls; each screen owns a touch scroller.
+   =========================================================================== */
+html,
+body {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--app-top, 0px);
+  height: var(--app-h, 100dvh);
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+/* Native-feeling scroll containers without visible scrollbars. */
+.scroller {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+.scroller::-webkit-scrollbar,
+.hscroll::-webkit-scrollbar {
+  display: none;
+}
+.hscroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+button,
+[role='button'],
+a {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+input,
+textarea {
+  font-size: 16px; /* below 16px iOS Safari zooms the page on focus */
+}
+:focus-visible {
+  outline: 2px solid var(--latex-ink);
+  outline-offset: 2px;
+}
+
+/* iOS: translucent material bars. Android: opaque, elevated surfaces. */
+.bar-material {
+  background: var(--bar);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+:root[data-platform='android'] .bar-material {
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Domain accent: --dc is the dark-theme colour; light theme darkens it for contrast. */
+.dc {
+  --dc-ink: var(--dc);
+  --dc-soft: color-mix(in oklab, var(--dc) 16%, transparent);
+}
+:root[data-theme='light'] .dc {
+  --dc-ink: color-mix(in oklab, var(--dc) 42%, #0f172a);
+  --dc-soft: color-mix(in oklab, var(--dc) 30%, transparent);
+}
+
+/* Material ripple */
+.ripple-host {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ripple {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0.18;
+  transform: scale(0);
+  animation: ripple 520ms cubic-bezier(0.2, 0, 0, 1) forwards;
+  z-index: -1;
+}
+@keyframes ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--ink) 7%, transparent), transparent);
+  animation: shimmer 1.3s infinite;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot {
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ===========================================================================
+   Rendered Markdown + LaTeX
+   =========================================================================== */
+.md {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md .codeblock,
+.md .table-wrap {
+  margin: 0.7em 0;
+}
+.md h1,
+.md h2,
+.md h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.md h1 {
+  font-size: 1.4em;
+  margin: 0.4em 0 0.6em;
+}
+.md h2 {
+  font-size: 1.18em;
+  margin: 1.3em 0 0.5em;
+}
+.md h3 {
+  font-size: 1.04em;
+  margin: 1.1em 0 0.4em;
+}
+.md strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+.md em {
+  color: var(--ink);
+}
+.md a {
+  color: var(--latex-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md ul,
+.md ol {
+  padding-left: 1.3em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li {
+  margin: 0.3em 0;
+}
+.md li::marker {
+  color: var(--ink-3);
+}
+.md blockquote {
+  border-left: 3px solid var(--amber-ink);
+  background: color-mix(in oklab, var(--amber) 22%, transparent);
+  padding: 0.6em 0.9em;
+  border-radius: 0 10px 10px 0;
+  color: var(--ink);
+}
+.md blockquote > :first-child {
+  margin-top: 0;
+}
+.md blockquote > :last-child {
+  margin-bottom: 0;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.2em 0;
+}
+.md :not(pre) > code {
+  font-family: ui-monospace, 'SF Mono', Menlo, 'Roboto Mono', monospace;
+  font-size: 0.86em;
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  color: var(--ink);
+}
+.md .katex {
+  font-size: 1.08em;
+  color: var(--ink);
+}
+/* Wide display formulas scroll inside their own box instead of widening the page. */
+.md .katex-display,
+.katex-block {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.35em 0.1em;
+  margin: 0.6em 0;
+  max-width: 100%;
+}
+.md .katex-display::-webkit-scrollbar,
+.katex-block::-webkit-scrollbar {
+  display: none;
+}
+.md .katex-display > .katex {
+  font-size: 1.12em;
+}
+.katex-error {
+  color: var(--danger);
+}
+.md .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.md table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92em;
+}
+.md th,
+.md td {
+  padding: 0.5em 0.7em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+.md th {
+  color: var(--ink);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.md tr:last-child td {
+  border-bottom: 0;
+}
+.md .codeblock {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.md .codeblock-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35em 0.5em 0.35em 0.85em;
+  font-size: 12px;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  text-transform: lowercase;
+}
+.md .code-copy {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--latex-ink);
+  padding: 0.35em 0.7em;
+  border-radius: 8px;
+  min-height: 32px;
+}
+.md .code-copy:active {
+  background: var(--surface-2);
+}
+.md pre {
+  margin: 0;
+  padding: 0.8em 0.9em;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.md pre code {
+  font-family: ui-monospace, 'SF Mono', Menlo, 'Roboto Mono', monospace;
+  background: none;
+  white-space: pre;
+}
+.md .sim-note {
+  display: inline-block;
+  margin-top: 0.4em;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  padding: 0.15em 0.65em;
+}
+.md-compact {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.md-compact p {
+  margin: 0;
+}
+
+/* highlight.js: token colours that work on both code backgrounds */
+.hljs-comment,
+.hljs-quote {
+  color: #8b949e;
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-type {
+  color: #ff7b72;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: #a5d6ff;
+}
+.hljs-number,
+.hljs-literal,
+.hljs-symbol {
+  color: #79c0ff;
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-section {
+  color: #d2a8ff;
+}
+.hljs-attr,
+.hljs-variable,
+.hljs-params {
+  color: #ffa657;
+}
+.hljs-meta {
+  color: #7ee787;
+}
+.md pre code {
+  color: #e6edf3;
+}
+:root[data-theme='light'] .md pre code {
+  color: #24292f;
+}
+:root[data-theme='light'] .hljs-comment {
+  color: #6e7781;
+}
+:root[data-theme='light'] .hljs-keyword,
+:root[data-theme='light'] .hljs-built_in,
+:root[data-theme='light'] .hljs-type {
+  color: #cf222e;
+}
+:root[data-theme='light'] .hljs-string {
+  color: #0a3069;
+}
+:root[data-theme='light'] .hljs-number,
+:root[data-theme='light'] .hljs-literal {
+  color: #0550ae;
+}
+:root[data-theme='light'] .hljs-title,
+:root[data-theme='light'] .hljs-title.function_ {
+  color: #8250df;
+}
+:root[data-theme='light'] .hljs-attr,
+:root[data-theme='light'] .hljs-variable,
+:root[data-theme='light'] .hljs-params {
+  color: #953800;
+}
+:root[data-theme='light'] .hljs-meta {
+  color: #116329;
+}
+
+/* User chat bubble: white text and math on LaTeX blue */
+.bubble-user .md,
+.bubble-user .md strong,
+.bubble-user .md em,
+.bubble-user .md .katex {
+  color: #ffffff;
+}
+.bubble-user .md :not(pre) > code {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
